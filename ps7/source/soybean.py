@@ -1,7 +1,7 @@
 """
-Author      : Yi-Chieh Wu
+Author      : Arjun Natarajan
 Class       : HMC CS 158
-Date        : 2020 Mar 03
+Date        : 2020 Apr 08
 Description : Multiclass Classification on Soybean Dataset
               This code was adapted from course material by Tommi Jaakola (MIT)
 """
@@ -56,8 +56,21 @@ def generate_output_codes(num_classes, code_type) :
     # part a: generate output codes
     # professor's solution: 13 lines
     # hint: initialize with np.ones(...) and np.zeros(...)
-    
-    R = None
+    import math
+    if code_type == 'ova':
+        num_classifiers = num_classes
+        R = np.ones((num_classes, num_classifiers))
+        R.fill(-1)
+        np.fill_diagonal(R, 1)
+    elif code_type == 'ovo':
+        num_classifiers = math.factorial(num_classes)/(2 * math.factorial(num_classes - 2))
+        R = np.zeros((num_classes, int(num_classifiers)))
+        col = 0
+        for i in range(num_classes):
+            for j in range(i+1, num_classes):
+                R[i, col] = 1
+                R[j, col] = -1
+                col += 1
     ### ========== TODO : END ========== ###
     
     return R
@@ -88,7 +101,7 @@ def test_output_codes():
     R_act = generate_output_codes(3, 'ova')
     R_exp = np.array([[  1, -1, -1],
                       [ -1,  1, -1],
-                      [ -1, -1,  1]])    
+                      [ -1, -1,  1]])      
     assert (R_exp == R_act).all(), "'ova' incorrect"
     
     R_act = generate_output_codes(3, 'ovo')
@@ -188,8 +201,16 @@ class MulticlassSVM :
         #     y_train should contain only {+1,-1}
         #
         # train the binary classifier
-        
-        pass
+
+        for C in self.classes:
+            row = R[C]
+            #pos_ndx and neg_ndx actually need to index X I think, still unsure
+            posCols = np.nonzero(row == 1)[0]
+            pos_ndx = [R[row, j] for j in posCols]
+            negCols = np.nonzero(row == -1)[0]
+            neg_ndx = [R[row, j] for j in negCols]
+
+        X_train = 
         ### ========== TODO : END ========== ###
     
     
