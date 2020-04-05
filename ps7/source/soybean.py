@@ -52,7 +52,6 @@ def generate_output_codes(num_classes, code_type) :
                            output code
     """
     
-    ### ========== TODO : START ========== ###
     # part a: generate output codes
     # professor's solution: 13 lines
     # hint: initialize with np.ones(...) and np.zeros(...)
@@ -71,8 +70,6 @@ def generate_output_codes(num_classes, code_type) :
                 R[i, col] = 1
                 R[j, col] = -1
                 col += 1
-    ### ========== TODO : END ========== ###
-    
     return R
 
 
@@ -174,14 +171,12 @@ class MulticlassSVM :
         --------------------
             self -- an instance of self
         """
-        
         classes = np.unique(y)
         num_classes, num_classifiers = self.R.shape
         if len(classes) != num_classes :
             raise Exception('num_classes mismatched between R and data')
         self.classes = classes    # keep track for prediction
         
-        ### ========== TODO : START ========== ###
         # part b: train binary classifiers
         # professor's solution: 13 lines
         
@@ -202,18 +197,27 @@ class MulticlassSVM :
         #
         # train the binary classifier
 
-        for C in self.classes:
-            row = R[C]
-            #pos_ndx and neg_ndx actually need to index X I think, still unsure
-            posCols = np.nonzero(row == 1)[0]
-            pos_ndx = [R[row, j] for j in posCols]
-            negCols = np.nonzero(row == -1)[0]
-            neg_ndx = [R[row, j] for j in negCols]
+        for i in range(num_classifiers):
+            neg_class = []
+            pos_class = []
+            for j in range(num_classes):
+                if self.R[j,i] == 1:
+                    pos_class.append(self.classes[j])
+                elif self.R[j,i] == -1:
+                    neg_class.append(self.classes[j])
 
-        X_train = 
-        ### ========== TODO : END ========== ###
-    
-    
+            a = np.isin(y, pos_class)
+            pos_ndx = np.nonzero(a)[0]
+            a = np.isin(y, neg_class)
+            neg_ndx = np.nonzero(a)[0]
+            pos_classes = np.ones(len(pos_ndx), dtype = int)
+            neg_classes = np.full(len(neg_ndx), -1)
+
+            X_train = np.append(X[neg_ndx], X[pos_ndx], axis = 0)
+            y_train = np.append(neg_classes, pos_classes)
+            self.svms[i].fit(X_train, y_train)
+            # print(self.svms[i].support_)
+
     def predict(self, X) :
         """
         Predict the optimal class.
@@ -266,7 +270,6 @@ def main() :
     # part a : generate output codes
     test_output_codes()
     
-    ### ========== TODO : START ========== ###
     # parts b-c : train component classifiers, make predictions,
     #             compare output codes
     #
@@ -284,8 +287,20 @@ def main() :
     #     array([ 12,  22,  29,  37,  41,  44,  49,  55,  76, 134, 
     #            157, 161, 167, 168,   0,   3,   7])
     #   you should find 54 errors on the test data
-    
-    ### ========== TODO : END ========== ###
+    R_ova = generate_output_codes(num_classes, 'ova')
+    R_ovo = generate_output_codes(num_classes, 'ovo')
+    R1 = load_code("R1.csv")
+    R2 = load_code("R2.csv")
+
+    num_examples = len(test_data.y)
+    outputs = [('ova', R_ova), ('ovo', R_ovo), ('R1',R1), ('R2',R2)]
+    for outputName, output in outputs:
+        clf = MulticlassSVM(output, C = 10, kernel = 'poly', degree = 4, gamma = 'scale')
+        clf.fit(train_data.X,train_data.y)
+        pred = clf.predict(test_data.X)
+        print("{}........".format(outputName))
+        correct = metrics.accuracy_score(test_data.y, pred, normalize= False)
+        print('num incorrect: {}'.format(num_examples - correct))
 
 if __name__ == "__main__" :
     main()
